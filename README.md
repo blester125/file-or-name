@@ -83,6 +83,12 @@ handle files with other encodings.
 The `@file_or_name` decorator will open and close files automatically for you when your function takes a file. If you
 use the decorator with no arguments it will open the first argument as a file in read mode.
 
+```python
+@file_or_name
+def read_json(f):
+    return json.load(f)
+```
+
 In order to handle multiple files as well as writing use keyword arguments to the decorator in the form `parameter=mode`.
 This will open a file using the value of parameter as a file in the specified mode.
 
