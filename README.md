@@ -111,3 +111,31 @@ def convert_jsonl_to_yaml(rf, wf):
 
 File or Name lets you the library develop write function that operate on files object making code cleaner and more
 testable while letting your users interact with your code using simple file path string arguments.
+
+
+# Shadow Paging
+
+A common problem I have is that I have code that will read from a file with a generator, this lets me process chunks of
+data and I don't have to worry about memory concerns. The problem is when I want to read data from a file, make changes
+to it and then write back to that same file. You can't open the file for writing because that would destroy the data you
+want to read in it. A common solution is to read the data in and keep it in memory until you process it all. Then open
+the file for writing and write it all back. This defeats out want of having a generator to not process it all at once,
+it also means it is possible to have a error when writing data that will leave you in a state with no data. That is why
+I introduced the shadow page to this library. Using a `NamedTemporaryFile` you can write to this file as much as you
+want and when you close the file it will be automatically used to replace the file on disk in an atomic way, This means
+you can't lose you data by having a bug during writing and it lets you write back to a file that you are using a
+generator to read from.
+
+You can use this functionality by prefixing your write models with a `s`
+
+
+```python
+@file_or_name(f='r', wf='sw')
+def reverse(f, wf):
+    data = f.read()[::-1]
+    if random.random() < 0.5:
+        raise ValueError
+    wf.write(data)
+```
+
+This function will either leave you data intact or reverse it. You don't end up with a state where the data is deleted.

@@ -1,35 +1,14 @@
 import logging
 import inspect
 from functools import wraps
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from typing import Callable, Any, List, Dict, Tuple
+from file_or_name.utils import parameterize, get_first_parameter, ShadowPage
 
 
 __all__ = ["file_or_name"]
 LOGGER = logging.getLogger("file_or_name")
 UTF_8 = "utf-8"
-
-
-def parameterize(function: Callable) -> Callable:
-    """Allow a decorator to be called without parentheses if no kwargs are given.
-
-    parameterize is a decorator, function is also a decorator.
-    """
-
-    @wraps(function)
-    def decorator(*args, **kwargs):
-        """If a decorator is called with only the wrapping function just execute the real decorator.
-           Otherwise return a lambda that has the args and kwargs partially applied and read to take a function as an argument.
-
-        *args, **kwargs are the arguments that the decorator we are parameterizing is called with.
-
-        the first argument of *args is the actual function that will be wrapped
-        """
-        if len(args) == 1 and not kwargs and callable(args[0]):
-            return function(args[0])
-        return lambda wrappee: function(wrappee, *args, **kwargs)
-
-    return decorator
 
 
 @contextmanager
@@ -43,29 +22,18 @@ def open_files(files: Dict[str, str], function: Callable, *args: List[Any], **kw
     :returns: A dict mapping argument names to argument values with the opened files inserted.
         function should now be called with this dict ** unpacked.
     """
-    to_close = []
     call_args = inspect.getcallargs(function, *args, **kwargs)
-    for file_name, mode in files.items():
-        LOGGER.debug("Opening file %s in mode %s", file_name, mode)
-        if file_name not in call_args:
-            raise ValueError(f"Argument {file_name} is missing and expected to be opened in {mode} mode.")
-        if isinstance(call_args[file_name], str):
-            call_args[file_name] = open(call_args[file_name], mode=mode, encoding=None if "b" in mode else UTF_8)
-            to_close.append(call_args[file_name])
-    yield call_args
-    for f in to_close:
-        LOGGER.debug("Closing parameter file %s", f.name)
-        f.close()
-
-
-def get_first_parameter(function: Callable) -> str:
-    """Get the name of the first parameter of a function.
-
-    :param function: The function we want the name of the first parameter of
-    :returns: The name of the first parameters
-    """
-    sig = inspect.signature(function)
-    return list(sig.parameters.keys())[0]
+    with ExitStack() as stack:
+        for file_name, mode in files.items():
+            LOGGER.debug("Opening file %s in mode %s", file_name, mode)
+            if file_name not in call_args:
+                raise ValueError(f"Argument {file_name} is missing and expected to be opened in {mode} mode.")
+            if isinstance(call_args[file_name], str):
+                if mode.startswith("s"):
+                    call_args[file_name] = stack.enter_context(ShadowPage(call_args[file_name], mode[1:], encoding = None if "b" in mode else UTF_8))
+                else:
+                    call_args[file_name] = stack.enter_context(open(call_args[file_name], mode=mode, encoding=None if "b" in mode else UTF_8))
+        yield call_args
 
 
 @parameterize
@@ -90,8 +58,9 @@ def file_or_name(function: Callable, **kwargs: Dict[str, str]) -> Callable:
         first = get_first_parameter(function)
         LOGGER.debug("No file parameters provided, using %s='r'", first)
         files[first] = "r"
-    to_close = []
-    # We
+    # We need to check if we are a generator out here because if we waited to check in the
+    # open_arg_files function then open_arg_files would be a generator no matter what because
+    # it would have a yield in it (even if that code path wasn't executed for a function)
     if inspect.isgeneratorfunction(function):
 
         @wraps(function)

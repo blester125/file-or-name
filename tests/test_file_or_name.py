@@ -184,7 +184,42 @@ def test_open_files_opens_and_closes_files():
                 else:
                     assert args not in open_patch.call_args_list
         for g in gold:
-            if g["string"]:
-                mocks[g["value"]].close.assert_called_once_with()
-            else:
+            if not g["string"]:
                 mocks[g["value"]].close.assert_not_called()
+
+
+@file_or_name(wf="sw")
+def writing_test(wf, data, die=False):
+    if die:
+        raise ValueError
+    wf.write(data)
+
+
+@pytest.fixture
+def data():
+    file_name = random_string()
+    gold_data = random_string()
+    og_data = random_string()
+    with open(file_name, "w") as wf:
+        wf.write(og_data)
+    yield file_name, gold_data, og_data
+    os.remove(file_name)
+
+
+def test_shadow_page_atomic(data):
+    file_name, gold_data, og_data = data
+    try:
+        writing_test(file_name, gold_data, die=True)
+    except ValueError:
+        pass
+    with open(file_name) as f:
+        res = f.read()
+    assert res == og_data
+
+
+def test_shadow_page_write(data):
+    file_name, gold_data, og_data = data
+    writing_test(file_name, gold_data, die=False)
+    with open(file_name) as f:
+        res = f.read()
+    assert res == gold_data
