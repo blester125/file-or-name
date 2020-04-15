@@ -30,9 +30,17 @@ def open_files(files: Dict[str, str], function: Callable, *args: List[Any], **kw
                 raise ValueError(f"Argument {file_name} is missing and expected to be opened in {mode} mode.")
             if isinstance(call_args[file_name], str):
                 if mode.startswith("s"):
-                    call_args[file_name] = stack.enter_context(ShadowPage(call_args[file_name], mode[1:], encoding = None if "b" in mode else UTF_8))
+                    if "w" not in mode:
+                        raise ValueError(
+                            f"Shadow paging (requested by pre-pending `s` to the {call_args[file_name]}'s file mode) only supported for writing, got {mode[1:]}"
+                        )
+                    call_args[file_name] = stack.enter_context(
+                        ShadowPage(call_args[file_name], mode[1:], encoding=None if "b" in mode else UTF_8)
+                    )
                 else:
-                    call_args[file_name] = stack.enter_context(open(call_args[file_name], mode=mode, encoding=None if "b" in mode else UTF_8))
+                    call_args[file_name] = stack.enter_context(
+                        open(call_args[file_name], mode=mode, encoding=None if "b" in mode else UTF_8)
+                    )
         yield call_args
 
 

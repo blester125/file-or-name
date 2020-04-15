@@ -1,8 +1,8 @@
 import os
 import logging
 import inspect
-from typing import Callable
 from functools import wraps
+from typing import Callable, Optional
 from tempfile import NamedTemporaryFile
 
 
@@ -43,28 +43,38 @@ def get_first_parameter(function: Callable) -> str:
 
 
 class ShadowPage:
-    def __init__(self, path, mode="wb", delete=False, dir=None, encoding=None):
+    """Store updates to a different copy of the output file and swing pointers for an atomic write."""
+
+    def __init__(self, path: str, mode: str = "wb", dir: Optional[str] = None, encoding: Optional[str] = None):
         self.path = path
-        self.temp_file = NamedTemporaryFile(mode=mode, delete=delete, dir=dir, encoding=encoding)
+        # Don't try to delete the temp file when cleaning up, it will either be removed in the
+        # swing to the real file or it should be left for debugging
+        self.temp_file = NamedTemporaryFile(mode=mode, delete=False, dir=dir, encoding=encoding)
         LOGGER.debug("Opening shadow file for %s at %s", self.path, self.temp_file.name)
 
     def __enter__(self):
+        """Go the normal thing temp files do when entering a context block."""
         self.temp_file.__enter__()
         return self
 
     def write(self, *args, **kwargs):
+        """Proxy writes to the temp file."""
         return self.temp_file.write(*args, **kwargs)
 
     def __exit__(self, exc, value, tb):
-        try:
-            stat = os.stat(self.path)
-            os.chown(self.temp_file.name, stat.st_uid, stat.st_gid)
-            os.chmod(self.temp_file.name, stat.st_mode)
-        except FileNotFoundError:
-            pass
+        # If we exited this context manager normally swing the pointer to the real path
         if exc is None:
+            # Try to set the permission on the temp file to match the real file
+            try:
+                stat = os.stat(self.path)
+                os.chown(self.temp_file.name, stat.st_uid, stat.st_gid)
+                os.chmod(self.temp_file.name, stat.st_mode)
+            except FileNotFoundError:
+                pass
             os.replace(self.temp_file.name, self.path)
             LOGGER.debug("Replacing %s with shadow file %s", self.path, self.temp_file.name)
+        # If we found an error don't try to replace the old file
         else:
             LOGGER.debug("Context closed do to %s rolling back update.", exc.__name__)
+        # Normal tempfile cleanup
         self.temp_file.__exit__(exc, value, tb)

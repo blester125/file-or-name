@@ -223,3 +223,12 @@ def test_shadow_page_write(data):
     with open(file_name) as f:
         res = f.read()
     assert res == gold_data
+
+
+def test_shadow_page_on_reads(data):
+    @file_or_name(f="sr")
+    def test(f):
+        pass
+
+    with pytest.raises(ValueError):
+        test("aaa")
