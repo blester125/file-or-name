@@ -16,7 +16,7 @@ def get_version(file_name: str, version_name: str = "__version__") -> Optional[s
 class About(object):
     NAME = "file-or-name"
     VERSION = get_version("file_or_name/__init__.py")
-    AUTHOR = "file-or-name"
+    AUTHOR = "blester125"
     EMAIL = f"{AUTHOR}@gmail.com"
     URL = f"https://github.com/{AUTHOR}/{NAME}"
     DL_URL = f"{URL}/archive/{VERSION}.tar.gz"
