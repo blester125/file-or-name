@@ -126,7 +126,7 @@ want and when you close the file it will be automatically used to replace the fi
 you can't lose you data by having a bug during writing and it lets you write back to a file that you are using a
 generator to read from.
 
-You can use this functionality by prefixing your write mods with a `s`
+You can use this functionality by prefixing your write modes with a `s`
 
 
 ```python
