@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import pathlib
 from typing import Optional
 from itertools import chain
 from unittest.mock import patch, MagicMock, call
@@ -127,6 +128,25 @@ def test_file_or_name_gen_write_mode(write_file):
     assert res == data
 
 
+def test_file_or_name_write_mode_path_lib(write_file):
+    w = file_or_name(wf="w")(write)
+    data = "\n".join(random_string() for _ in range(random.randint(1, 10)))
+    write_file = pathlib.Path(write_file)
+    w(write_file, data)
+    with open(write_file) as f:
+        res = f.read()
+    assert res == data
+
+
+def test_file_or_name_gen_write_mode_pathlib(write_file):
+    w = file_or_name(wf="w")(write_gen)
+    data = "\n".join(random_string() for _ in range(random.randint(1, 10)))
+    write_file = pathlib.Path(write_file)
+    list(w(write_file, data))
+    with open(write_file) as f:
+        res = f.read()
+    assert res == data
+
 def test_file_or_name_read_two():
     r = file_or_name(f="r", f2="r")(read_two)
     data = r(ONE_FILE, TWO_FILE)
@@ -144,6 +164,24 @@ def test_file_or_name_skips_first_if_other_specified():
     string = random_string()
     data = r(string, ONE_FILE)
     assert data == [string] + ONE_VALUES
+
+def test_file_or_name_read_two_pathlib():
+    r = file_or_name(f="r", f2="r")(read_two)
+    data = r(pathlib.Path(ONE_FILE), pathlib.Path(TWO_FILE))
+    assert data == ONE_VALUES + TWO_VALUES
+
+
+def test_file_or_name_read_two_gen_pathlib():
+    r = file_or_name(f="r", f2="r")(read_two_gen)
+    data = list(r(pathlib.Path(ONE_FILE), pathlib.Path(TWO_FILE)))
+    assert data == ONE_VALUES + TWO_VALUES
+
+
+def test_file_or_name_skips_first_if_other_specified_pathlib():
+    r = file_or_name(f="r")(string_plus_file)
+    string = random_string()
+    data = r(pathlib.Path(string), pathlib.Path(ONE_FILE))
+    assert data == [pathlib.Path(string)] + ONE_VALUES
 
 
 def test_open_files_error_on_missing_argument():

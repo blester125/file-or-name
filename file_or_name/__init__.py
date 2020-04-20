@@ -1,4 +1,4 @@
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 import file_or_name.file_or_name as file_or_name_module
 from file_or_name.file_or_name import file_or_name

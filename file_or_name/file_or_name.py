@@ -1,5 +1,6 @@
 import logging
 import inspect
+import pathlib
 from functools import wraps
 from contextlib import contextmanager, ExitStack
 from typing import Callable, Any, List, Dict, Tuple
@@ -28,7 +29,7 @@ def open_files(files: Dict[str, str], function: Callable, *args: List[Any], **kw
             LOGGER.debug("Opening file %s in mode %s", file_name, mode)
             if file_name not in call_args:
                 raise ValueError(f"Argument {file_name} is missing and expected to be opened in {mode} mode.")
-            if isinstance(call_args[file_name], str):
+            if isinstance(call_args[file_name], (str, pathlib.PurePath)):
                 if mode.startswith("s"):
                     if "w" not in mode:
                         raise ValueError(
