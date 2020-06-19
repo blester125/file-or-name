@@ -11,9 +11,13 @@ LOGGER = logging.getLogger("file_or_name")
 
 
 def parameterize(function: Callable) -> Callable:
-    """Allow a decorator to be called without parentheses if no kwargs are given.
+    """A decorator for decorators that allow them to be called without parentheses if no kwargs are given.
 
-    parameterize is a decorator, function is also a decorator.
+    Args:
+        function: A decorator that we want to use with either ``@function`` or ``@function(kwarg=kwvalue)``
+
+    Returns:
+        A decorated decorator that can be used with or without parentheses
     """
 
     @wraps(function)
@@ -35,15 +39,31 @@ def parameterize(function: Callable) -> Callable:
 def get_first_parameter(function: Callable) -> str:
     """Get the name of the first parameter of a function.
 
-    :param function: The function we want the name of the first parameter of
-    :returns: The name of the first parameters
+    Args:
+        function: The function whose first parameter name we want.
+
+    Returns:
+        The name of the first parameter.
     """
     sig = inspect.signature(function)
     return list(sig.parameters.keys())[0]
 
 
 class ShadowPage:
-    """Store updates to a different copy of the output file and swing pointers for an atomic write."""
+    """Store updates to a copy of the output file and swing pointers for an atomic write.
+
+    Note:
+        In some environments like Kubernetes this is not safe to use when the file we are shadowing
+        is in a PersistentVolumeClaim. The temporary file lives in the containers file system and
+        in some configurations Kubernetes will block copying files from the container local file
+        system into the PVC file system.
+
+    Args:
+        path: The file that we are shadowing.
+        mode: The mode we should open the shadow file in.
+        dir: The directory in which the shadow file should be created.
+        encoding: The file type encoding the shadow file should be opened in.
+    """
 
     def __init__(self, path: str, mode: str = "wb", dir: Optional[str] = None, encoding: Optional[str] = None):
         self.path = path
