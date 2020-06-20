@@ -31,7 +31,12 @@ def parameterize(function: Callable) -> Callable:
         """
         if len(args) == 1 and not kwargs and callable(args[0]):
             return function(args[0])
-        return lambda wrappee: function(wrappee, *args, **kwargs)
+
+        @wraps(function)
+        def with_params(wrappe):
+            return function(wrappe, *args, **kwargs)
+
+        return with_params
 
     return decorator
 
