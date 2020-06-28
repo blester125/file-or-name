@@ -1,5 +1,0 @@
-license
-=======
-
-contact
-=======

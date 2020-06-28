@@ -1,29 +1,15 @@
-``file-or-name`` Documentation
-========================================
-
-Another simple header
-=====================
-
-Here is some text explaining the library.::
-
-    from file_or_name import file_or_name
-
-    @file_or_name
-    def read_json(f):
-        return json.load(f)
-
-Guide
-^^^^^
-
 .. toctree::
-   :maxdepth: 3
+   :hidden:
+   :maxdepth: 2
    :caption: Contents:
 
-   modules
-   license
+   self
+   install
+   file_or_name
    help
+   Code Repository <https://github.com/blester125/file-or-name>
 
-
+.. include:: ../../README.rst
 
 Indices and tables
 ==================

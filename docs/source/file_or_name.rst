@@ -1,24 +1,18 @@
-file\_or\_name package
-======================
+---
+API
+---
 
-Submodules
-----------
-
-file\_or\_name.file\_or\_name module
-------------------------------------
+file\_or\_name
+--------------
 
 .. automodule:: file_or_name.file_or_name
    :members:
-   :undoc-members:
-   :show-inheritance:
 
-file\_or\_name.utils module
----------------------------
+file\_or\_name.utils
+--------------------
 
 .. automodule:: file_or_name.utils
    :members:
-   :undoc-members:
-   :show-inheritance:
 
 
 Module contents

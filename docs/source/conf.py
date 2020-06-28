@@ -22,7 +22,7 @@ copyright = '2020, Brian Lester'
 author = 'Brian Lester'
 
 # The full version, including alpha/beta/rc tags
-release = '1.1.4'
+release = file_or_name.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,6 +33,7 @@ release = '1.1.4'
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "sphinx.ext.autodoc.typehints",
 ]
 
@@ -60,3 +61,24 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Fiddling with the object to force sphinx to follow __wrapped__
+# Everything I use with `@file_or_name` uses `@functools.wraps` correctly but
+# sphinx doesn't actually use `inspect.signature` or follows the `__wrapped__`
+# attribute. By pretending that we are a context manager we force sphinx to
+# follow the `__wrapped__`. We do this by adding a hook to the
+# `autodoc-before-process-signature` event. In this hook we then we fiddle with
+# the `__name__` and `__file__` attributes so that spinx things we are a contexmanager
+# I figured out how to trigger this by debugging into
+# `sphinx.utils.inspect._should_unwrap`. This is an internal function and could
+# change we we should pin our sphinx version.
+import contextlib
+
+
+def munge_sig(app, obj, bound_method):
+    obj.__globals__["__name__"] = "contextlib"
+    obj.__globals__["__file__"] = contextlib.__file__
+
+
+def setup(app):
+    app.connect("autodoc-before-process-signature", munge_sig)
